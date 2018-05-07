@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Rejsekortreader</string>
+    <string name="unknown_card">Unknown cardtype</string>
+    <string name="top_string">Card: %1$d - %2$s</string>
+</resources>
