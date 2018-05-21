@@ -27,7 +27,6 @@ public class NFCCard {
     private int pos;
     private int cardVersion = -1;
     private String debugString = "";
-    private boolean isSL = false;
     private boolean isRejseKort = false;
 
     public NFCCard() {
@@ -52,16 +51,9 @@ public class NFCCard {
         }
         pos = 0;
 
-        debug("--- Start parsing ---");
-        debug("-- First Sector");
         parseFirstSector();
-        debug("-- TCDI");
-        if(isSL) {
-            // SL (or version 4) seems to have two TCDI and from the looks of it
-            // the second one seems to be the valid one
-            parseTCDI(256*3);
-        }
-        else {
+        if (isRejseKort)
+        {
             parseTCDI(128*3);
         }
 
@@ -70,8 +62,6 @@ public class NFCCard {
                 continue;
             parseSector(i);
         }
-        debug("--- Finished parsing ---");
-        //searchForVal(0, (16*48*8), 16, 627547);
 
         return true;
     }
@@ -79,16 +69,13 @@ public class NFCCard {
     private void parseSector(int n) {
         int sb = n*48;
         int ident;
-        debug("-- Parsing Sector "+n+":");
         pos = sb*8;
         ident = getIntFromPos(8);
-        debug("Identifer: "+Integer.toHexString(ident));
+
         switch (ident) {
             case 0x85:
                 parsePurse(sb*8);
                 break;
-            default:
-                debug("Unknown sector");
         }
     }
 
@@ -104,10 +91,7 @@ public class NFCCard {
         cardVersion = (int)addAttribute("Card version", 6, firstSector);
 
         ret = addAttribute("Card provider", 12, firstSector, NFCObject.NFCType.AID);
-        if(0x65 == ret) {
-            isSL = true;
-        }
-        else if(0x7d0 == ret) {
+        if(0x7d0 == ret) {
             isRejseKort = true;
         }
 
@@ -353,6 +337,7 @@ public class NFCCard {
         double d = ((double)i/unit);
         return new DecimalFormat("0.00").format(d) + " " + currency;
     }
+
 
     public static String getTCDIAID(int i) {
         switch(i) {

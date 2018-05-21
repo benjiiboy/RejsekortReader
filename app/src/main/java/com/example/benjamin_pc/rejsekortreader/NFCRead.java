@@ -1,6 +1,9 @@
 package com.example.benjamin_pc.rejsekortreader;
 
 import java.io.IOException;
+
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.nfc.TagLostException;
 
 import android.app.Activity;
@@ -12,6 +15,7 @@ import android.nfc.tech.MifareClassic;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -24,6 +28,7 @@ public class NFCRead extends Activity {
     private Resources res;
     private TextView InfoTextView;
     private TextView AmountTextView;
+
 
 
     private Intent oldIntent = null;
@@ -83,6 +88,8 @@ public class NFCRead extends Activity {
         private boolean tagLost = false;
         private CardType cardType = CardType.UNINITIALIZED;
         private NFCCard card = null;
+
+
 
         @Override
         protected Void doInBackground(Void... arg) {
@@ -179,20 +186,37 @@ public class NFCRead extends Activity {
             else {
                 // if the tag was not lost during read
                 if(card != null) {
-                    card.parseCard();
+                        card.parseCard();
 
-                    // get vendor and serial number and set the top string of main view
-                    if(card.firstSector != null) {
-                        topString = String.format(res.getString(R.string.top_string),
-                                card.firstSector.get("Serial number").getValue(),
-                                NFCCard.getVendor((int)card.firstSector.get("Card provider").getValue()));
-                        InfoTextView.setText(topString);
-                    }
-                    // get the purse value and set it as main string of main view
-                    if(card.dynPurse != null) {
-                        mainString = card.getAmount((int)card.dynPurse.get("Value").getValue());
-                        AmountTextView.setText(mainString);
-                    }
+                        // get vendor and serial number and set the top string of main view
+                        if(card.firstSector != null) {
+                            topString = String.format(res.getString(R.string.top_string),
+                                    card.firstSector.get("Serial number").getValue(),
+                                    NFCCard.getVendor((int)card.firstSector.get("Card provider").getValue()));
+                            InfoTextView.setText(topString);
+                        }
+                        // get the purse value and set it as main string of main view
+                        if(card.dynPurse != null) {
+                            mainString = card.getAmount((int)card.dynPurse.get("Value").getValue());
+
+                            AmountTextView.setText(mainString);
+
+                            double hentpung = (card.dynPurse.get("Value").getValue()/100);
+
+                            if (hentpung < 50){
+                                Notification simpleNotification = new Notification.Builder(NFCRead.this)
+                                        .setSmallIcon(R.drawable.nfcicon)
+                                        .setContentTitle("Rejsekortreader - lav saldo")
+                                        .setContentText("Din saldo er: " + mainString + " Husk at tanke op!")
+                                        .setDefaults(Notification.DEFAULT_ALL)
+                                        .build();
+
+                                NotificationManager notificationManager = (NotificationManager)
+                                        getSystemService(NOTIFICATION_SERVICE);
+                                notificationManager.notify(0, simpleNotification);
+
+                            }
+                        }
                 }
                 else if(CardType.UNKNOWN == cardType) {
                     InfoTextView.setText(R.string.unknown_card);
